@@ -21,7 +21,7 @@ fn ray_color(r: &Ray, world: &World, depth: u64) -> Color {
     }
 
     if let Some(rec) = world.hit(r, 0.001, f64::INFINITY) {
-        let direction = Vec3::random_on_hemisphere(rec.normal);
+        let direction = rec.normal + Vec3::random_unit_vector();
         let r = Ray::new(rec.p, direction);
         0.5 * ray_color(&r, world, depth - 1)
     } else {
