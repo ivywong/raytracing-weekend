@@ -1,6 +1,8 @@
-use std::ops::{Index, IndexMut, Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Range, Sub, SubAssign};
 use std::fmt;
 use std::fmt::Display;
+
+use rand::{random, Rng};
 
 #[derive(Clone, Copy)]
 pub struct Vec3 {
@@ -29,12 +31,16 @@ impl Vec3 {
         self[2]
     }
 
-    pub fn dot(self, other: Vec3) -> f64 {
-        self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
-    }
-
     pub fn length(self) -> f64 {
         self.dot(self).sqrt()
+    }
+
+    pub fn normalized(self) -> Vec3 {
+        self / self.length()
+    }
+
+    pub fn dot(self, other: Vec3) -> f64 {
+        self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
     }
 
     pub fn cross(self, other: Vec3) -> Vec3 {
@@ -47,14 +53,40 @@ impl Vec3 {
         }
     }
 
-    pub fn normalized(self) -> Vec3 {
-        self / self.length()
+    pub fn random(r: Range<f64>) -> Vec3 {
+        let mut rng = rand::thread_rng();
+
+        Vec3 {
+            e: [rng.gen_range(r.clone()), rng.gen_range(r.clone()), rng.gen_range(r.clone())]
+        }
+    }
+
+    fn random_in_unit_sphere() -> Vec3 {
+        loop {
+            let v = Vec3::random(-1.0..1.0);
+            if v.length() < 1.0 {
+                return v;
+            }
+        }
+    }
+
+    pub fn random_unit_vector() -> Vec3 {
+        return Vec3::random_in_unit_sphere().normalized()
+    }
+
+    pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
+        let on_unit_sphere = Vec3::random_unit_vector();
+        if on_unit_sphere.dot(normal) > 0.0 {
+            on_unit_sphere
+        } else {
+            -1.0 * on_unit_sphere
+        }
     }
 
     pub fn format_color(self, samples_per_pixel: u64) -> String {
-        let ir = (256.0 * (self[0] / (samples_per_pixel as f64)).clamp(0.0, 0.999)) as u64;
-        let ig = (256.0 * (self[1] / (samples_per_pixel as f64)).clamp(0.0, 0.999)) as u64;
-        let ib = (256.0 * (self[2] / (samples_per_pixel as f64)).clamp(0.0, 0.999)) as u64;
+        let ir = (256.0 * (self[0] / (samples_per_pixel as f64)).sqrt().clamp(0.0, 0.999)) as u64;
+        let ig = (256.0 * (self[1] / (samples_per_pixel as f64)).sqrt().clamp(0.0, 0.999)) as u64;
+        let ib = (256.0 * (self[2] / (samples_per_pixel as f64)).sqrt().clamp(0.0, 0.999)) as u64;
     
         format!("{} {} {}", ir, ig, ib)
     }
