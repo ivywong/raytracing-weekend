@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, 
 use std::fmt;
 use std::fmt::Display;
 
-use rand::{random, Rng};
+use rand::Rng;
 
 #[derive(Clone, Copy)]
 pub struct Vec3 {
@@ -39,6 +39,11 @@ impl Vec3 {
         self / self.length()
     }
 
+    pub fn near_zero(self) -> bool {
+        const EPS: f64 = 1.0e-8;
+        self[0].abs() < EPS && self[1].abs() < EPS && self[2].abs() < EPS
+    }
+
     pub fn dot(self, other: Vec3) -> f64 {
         self[0] * other[0] + self[1] * other[1] + self[2] * other[2]
     }
@@ -51,6 +56,10 @@ impl Vec3 {
                 self[0] * other[1] - self[1] * other[0]
             ]
         }
+    }
+
+    pub fn reflect(self, n: Vec3) -> Vec3 {
+        self - 2.0 * self.dot(n) * n
     }
 
     pub fn random(r: Range<f64>) -> Vec3 {
@@ -167,6 +176,16 @@ impl Mul<Vec3> for f64 {
     fn mul(self, other: Vec3) -> Vec3 {
         Vec3 {
             e: [self * other[0], self * other[1], self * other[2]]
+        }
+    }
+}
+
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Self::Output {
+        Vec3 {
+            e: [self[0] * other[0], self[1] * other[1], self[2] * other[2]]
         }
     }
 }
