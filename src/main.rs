@@ -7,8 +7,29 @@ use vec::{Color, Point3, Vec3};
 use ray::Ray;
 use hit::{Hit, World};
 use sphere::Sphere;
-use std::io::{stderr, Write};
 
+use std::io::{stderr, Write};
+use colored::{ColoredString, Colorize};
+
+fn ray_ascii<'a>(r: &'a Ray, world: &'a World) -> ColoredString {
+    if let Some(rec) = world.hit(r, 0.0, f64::INFINITY) {
+        let color = 255.0 * 0.5 * (rec.normal + Color::new(0.0, 1.0, 0.0));
+        let mut chr = " ";
+        if rec.normal.z() > 0.95 {
+            chr = "@";
+        } else if rec.normal.z() > 0.85 {
+            chr = "X";
+        } else if rec.normal.z() > 0.75 {
+            chr = "/";
+        } else {
+            chr = ".";
+        }
+
+        chr.truecolor(color[0] as u8, color[1] as u8, color[2] as u8)
+    } else {
+        " ".normal()
+    }
+}
 
 fn ray_color(r: &Ray, world: &World) -> Color {
     if let Some(rec) = world.hit(r, 0.0, f64::INFINITY) {
@@ -24,25 +45,11 @@ fn ray_color(r: &Ray, world: &World) -> Color {
     }
 }
 
-fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
-    let oc = r.origin() - center;
-    let a = r.direction().length().powi(2);
-    let half_b = oc.dot(r.direction());
-    let c = oc.length().powi(2) - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
-}
-
 fn main() {
     // Image
-    const ASPECT_RATIO: f64 = 16.0 / 9.0;
-    const IMAGE_WIDTH: u64 = 256;
-    const IMAGE_HEIGHT: u64 = ((256 as f64) / ASPECT_RATIO) as u64;
+    const ASPECT_RATIO: f64 = 4.0 / 3.0;
+    const IMAGE_WIDTH: u64 = 128;
+    const IMAGE_HEIGHT: u64 = ((128 as f64) / ASPECT_RATIO) as u64;
 
     // World
     let mut world = World::new();
@@ -60,10 +67,6 @@ fn main() {
     let lower_left_corner =
         origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
 
-    println!("P3");
-    println!("{} {}", IMAGE_WIDTH, IMAGE_HEIGHT);
-    println!("255");
-
     for j in (0..IMAGE_HEIGHT).rev() {
         eprintln!("\rScanlines remaining: {:3}", IMAGE_HEIGHT - j - 1);
         stderr().flush().unwrap();
@@ -76,10 +79,11 @@ fn main() {
                 origin,
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
-            let pixel_color = ray_color(&r, &world);
-
-            println!("{}", pixel_color.format_color());
+            
+            let pixel_char = ray_ascii(&r, &world);
+            print!("{}", pixel_char);
         }
+        println!("");
     }
     eprint!("Done.");
 }
