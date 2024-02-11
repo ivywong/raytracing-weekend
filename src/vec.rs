@@ -70,7 +70,7 @@ impl Vec3 {
         }
     }
 
-    fn random_in_unit_sphere() -> Vec3 {
+    pub fn random_in_unit_sphere() -> Vec3 {
         loop {
             let v = Vec3::random(-1.0..1.0);
             if v.length() < 1.0 {
